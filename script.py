@@ -93,7 +93,7 @@ def read_console_input() -> Tuple[FileParams, StringParams]:
         type=bool,
         default=False,
         help="default=False"
-        "use True, in order to enable check for number size in strings. Regex for number size in regex_of_numbers parameter",
+        "use is_number_check_enabled=True, in order to enable check for number size in strings. Regex for number size in regex_of_numbers parameter",
     )
     args = parser.parse_args()
     return FileParams(
