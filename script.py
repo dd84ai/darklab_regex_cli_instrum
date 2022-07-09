@@ -54,19 +54,19 @@ def read_console_input() -> Tuple[FileParams, StringParams]:
         "--input_file",
         type=str,
         default="mbases.ini",
-        help="file input to process",
+        help='default="mbases.ini", file input to process',
     )
     parser.add_argument(
         "--output_file",
         type=str,
         default="output_file.txt",
-        help="output file name to save the result",
+        help='default="output_file.txt", output file name to save the result',
     )
     parser.add_argument(
         "--quantity_of_digits",
         type=int,
         default=5,
-        help="check for amount of digits present in string, if is_number_check_enabled=True is enabled",
+        help="default=5, check for amount of digits present in string, if is_number_check_enabled=True is enabled",
     )
     parser.add_argument(
         "--regex_word_to_be_present",
@@ -128,8 +128,7 @@ def get_desired_string(txt, string_params: StringParams, log=False) -> str:
     'local_faction = 564'
 
     >>> get_desired_string("[GF_NPC]", TestFactoryStringParams(regex_replacing="^\[.*\]|;"), log=True)
-    ';'
-
+    ';\\n'
     """
     if string_params.regex_replacing != "":
         word_to_find, word_to_replace_with = string_params.regex_replacing.split("|")
