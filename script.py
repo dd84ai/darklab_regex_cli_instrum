@@ -112,7 +112,7 @@ class WrongStringException(Exception):
     pass
 
 
-def get_desired_string(txt, string_params: StringParams, log=False) -> str:
+def get_desired_string(txt, string_params: StringParams) -> str:
     """
     >>> get_desired_string("The rain in Spain", TestFactoryStringParams())
     Traceback (most recent call last):
@@ -127,7 +127,7 @@ def get_desired_string(txt, string_params: StringParams, log=False) -> str:
     >>> get_desired_string("local_faction = 564", TestFactoryStringParams(regex_word_to_be_present="^rumor|^nickname|^local_faction"))
     'local_faction = 564'
 
-    >>> get_desired_string("[GF_NPC]", TestFactoryStringParams(regex_replacing="^\[.*\]|;"), log=True)
+    >>> get_desired_string("[GF_NPC]", TestFactoryStringParams(regex_replacing="^\[.*\]|;"))
     ';\\n'
     """
     if string_params.regex_replacing != "":
@@ -149,11 +149,9 @@ def get_desired_string(txt, string_params: StringParams, log=False) -> str:
     return txt
 
 
-def copy_desired_strings(
-    file_params: FileParams, string_params: StringParams, log=False
-):
+def copy_desired_strings(file_params: FileParams, string_params: StringParams):
     """
-    >>> copy_desired_strings(TestFactoryFileParams(), TestFactoryStringParams(), log = True)
+    >>> copy_desired_strings(TestFactoryFileParams(), TestFactoryStringParams())
     copied 8786 lines
     """
     with open(file_params.input_file, "r") as file_:
@@ -163,7 +161,6 @@ def copy_desired_strings(
     for line in lines:
 
         with suppress(WrongStringException):
-            pass
             desired_string = get_desired_string(
                 line,
                 string_params,
