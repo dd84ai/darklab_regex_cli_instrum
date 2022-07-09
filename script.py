@@ -2,6 +2,7 @@ import argparse
 import re
 from dataclasses import dataclass
 from typing import Tuple
+from contextlib import suppress
 
 
 @dataclass
@@ -72,8 +73,8 @@ def read_console_input() -> Tuple[FileParams, StringParams]:
         type=str,
         default="^rumor",
         help='default="^rumor"'
-        ', use as "^rumor"" in order to grab all words that begin with it'
-        ', use ^rumor|^nickname|^local_faction in order to grab multiple strings beginning with it"',
+        ', use as regex_word_to_be_present="^rumor"" in order to grab all words that begin with it'
+        ', use regex_word_to_be_present="^rumor|^nickname|^local_faction" in order to grab multiple strings beginning with it"',
     )
     parser.add_argument(
         "--regex_of_numbers",
@@ -85,6 +86,7 @@ def read_console_input() -> Tuple[FileParams, StringParams]:
         "--regex_replacing",
         type=str,
         default="",
+        help='default="", use as regex_replacing="^\[.*\]|;" in order to grab all strings with "[thing]" and having them replaced to ";"',
     )
     parser.add_argument(
         "--is_number_check_enabled",
@@ -106,23 +108,36 @@ def read_console_input() -> Tuple[FileParams, StringParams]:
     )
 
 
-def is_desired_string(txt, string_params: StringParams) -> bool:
+class WrongStringException(Exception):
+    pass
+
+
+def get_desired_string(txt, string_params: StringParams, log=False) -> str:
     """
-    >>> is_desired_string("The rain in Spain", TestFactoryStringParams())
-    False
+    >>> get_desired_string("The rain in Spain", TestFactoryStringParams())
+    Traceback (most recent call last):
+    script.WrongStringException: The word is not present
 
-    >>> is_desired_string("rumor = base_0_rank, mission_end, 1, 132524", TestFactoryStringParams())
-    True
+    >>> get_desired_string("rumor = base_0_rank, mission_end, 1, 132524", TestFactoryStringParams())
+    'rumor = base_0_rank, mission_end, 1, 132524'
 
-    >>> is_desired_string("nickname = 123", TestFactoryStringParams(regex_word_to_be_present="^rumor|^nickname|^local_faction"))
-    True
+    >>> get_desired_string("nickname = 123", TestFactoryStringParams(regex_word_to_be_present="^rumor|^nickname|^local_faction"))
+    'nickname = 123'
 
-    >>> is_desired_string("local_faction = 564", TestFactoryStringParams(regex_word_to_be_present="^rumor|^nickname|^local_faction"))
-    True
+    >>> get_desired_string("local_faction = 564", TestFactoryStringParams(regex_word_to_be_present="^rumor|^nickname|^local_faction"))
+    'local_faction = 564'
+
+    >>> get_desired_string("[GF_NPC]", TestFactoryStringParams(regex_replacing="^\[.*\]|;"), log=True)
+    ';'
 
     """
+    if string_params.regex_replacing != "":
+        word_to_find, word_to_replace_with = string_params.regex_replacing.split("|")
+        if re.search(word_to_find, txt):
+            return word_to_replace_with + "\n"
+
     if not re.search(string_params.regex_word_to_be_present, txt):
-        return False
+        raise WrongStringException("The word is not present")
 
     found_numbers = re.findall(string_params.regex_of_numbers, txt)
 
@@ -130,9 +145,9 @@ def is_desired_string(txt, string_params: StringParams) -> bool:
         if all(
             [len(number) < string_params.quantity_of_digits for number in found_numbers]
         ):
-            return False
+            raise WrongStringException("size of numbers is wrong")
 
-    return True
+    return txt
 
 
 def copy_desired_strings(
@@ -148,13 +163,13 @@ def copy_desired_strings(
     lines_to_write = []
     for line in lines:
 
-        if not is_desired_string(
-            line,
-            string_params,
-        ):
-            continue
-
-        lines_to_write.append(line)
+        with suppress(WrongStringException):
+            pass
+            desired_string = get_desired_string(
+                line,
+                string_params,
+            )
+            lines_to_write.append(desired_string)
 
     with open(file_params.output_file, "w") as file_:
         for line in lines_to_write:
